@@ -1,0 +1,14 @@
+# Normalise text to LF in the repository and on checkout, so the project is
+# byte-identical on every platform. The tests compare hashes of generated
+# archives, so an inconsistent working tree would produce spurious failures.
+* text=auto eol=lf
+
+# Binary. Marking these explicitly matters: if Git ever treated them as text,
+# end-of-line conversion would silently corrupt them, and the golden fixtures
+# exist precisely to detect byte-level changes.
+*.wasm   binary
+*.slc4   binary
+*.slc4z  binary
+*.exe    binary
+*.wcx64  binary
+*.pdf    binary

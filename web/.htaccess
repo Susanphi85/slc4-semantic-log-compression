@@ -1,0 +1,30 @@
+# SLC4 is a fully static site: Apache only serves files, no PHP is involved.
+# Works as-is on XAMPP and on shared PHP hosting.
+
+# WebAssembly.instantiateStreaming() rejects anything not served as
+# application/wasm, and Apache does not know the type by default.
+AddType application/wasm .wasm
+AddType text/javascript .js
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/javascript application/javascript application/json
+  # .wasm is already compact and .slc4z is compressed data; re-compressing wastes CPU.
+</IfModule>
+
+<IfModule mod_headers.c>
+  # The codec runs entirely client-side, so the page needs no third-party origin.
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "no-referrer"
+  <FilesMatch "\.(wasm|js)$">
+    Header set Cache-Control "public, max-age=3600"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_dir.c>
+  DirectoryIndex index.html
+</IfModule>
+
+# Never serve the working files of the repo, should they ever be copied along.
+<FilesMatch "\.(md|py|json|slc4|log)$">
+  Require all denied
+</FilesMatch>

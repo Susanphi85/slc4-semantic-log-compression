@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SLC4 — Semantic Log Packer</title>
+  <style>
+    :root { --bg:#0d1016; --panel:#151a23; --panel2:#1b2230; --text:#edf2f7; --muted:#93a0b2; --line:#2a3445; --accent:#8de1c2; --accent2:#8cb8ff; --bad:#ff9a9a; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif; background:var(--bg); color:var(--text); }
+    .wrap { width:min(1180px,92vw); margin:0 auto; padding:48px 0 72px; }
+    header { display:flex; justify-content:space-between; gap:32px; align-items:flex-end; margin-bottom:30px; }
+    h1 { font-size:clamp(32px,5vw,60px); line-height:.95; margin:0 0 12px; letter-spacing:-.045em; }
+    header p { color:var(--muted); max-width:720px; margin:0; font-size:16px; line-height:1.55; }
+    .badge { border:1px solid var(--line); color:var(--accent); padding:8px 12px; border-radius:999px; font-size:12px; white-space:nowrap; }
+    .tabs { display:flex; gap:8px; margin:24px 0 16px; }
+    .tab { background:transparent; color:var(--muted); border:1px solid var(--line); border-radius:10px; padding:10px 16px; cursor:pointer; }
+    .tab.active { color:var(--text); border-color:var(--accent); background:#14221f; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:22px; }
+    .drop { border:1px dashed #47556c; background:var(--panel2); border-radius:14px; padding:34px 20px; text-align:center; transition:.15s; cursor:pointer; }
+    .drop.drag { border-color:var(--accent); background:#152821; }
+    .drop strong { display:block; font-size:18px; margin-bottom:6px; }
+    .drop span { color:var(--muted); font-size:14px; }
+    input[type=file] { display:none; }
+    .controls { display:flex; flex-wrap:wrap; gap:12px; margin-top:16px; align-items:end; }
+    label.control { display:flex; flex-direction:column; gap:6px; color:var(--muted); font-size:12px; }
+    select,input[type=number] { background:#0f141c; color:var(--text); border:1px solid var(--line); border-radius:9px; padding:10px 12px; min-width:130px; }
+    button.primary { border:0; background:var(--accent); color:#07120e; font-weight:750; padding:11px 17px; border-radius:10px; cursor:pointer; }
+    button.secondary { border:1px solid var(--line); background:#101620; color:var(--text); font-weight:650; padding:10px 16px; border-radius:10px; cursor:pointer; }
+    button:disabled { opacity:.45; cursor:not-allowed; }
+    .status { color:var(--muted); margin-top:12px; font-size:13px; min-height:18px; }
+    .status.error { color:var(--bad); }
+    .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:18px 0; }
+    .card { background:var(--panel2); border:1px solid var(--line); border-radius:13px; padding:16px; }
+    .card .k { color:var(--muted); font-size:12px; }
+    .card .v { font-size:25px; margin-top:5px; font-weight:700; letter-spacing:-.02em; }
+    .bench { margin-top:20px; }
+    .benchrow { display:grid; grid-template-columns:220px 1fr 100px; gap:12px; align-items:center; margin:10px 0; }
+    .barbox { height:12px; background:#0c1118; border-radius:99px; overflow:hidden; }
+    .bar { height:100%; background:var(--accent2); border-radius:99px; min-width:2px; }
+    .bar.best { background:var(--accent); }
+    .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+    .tablewrap { overflow:auto; max-height:420px; margin-top:18px; border:1px solid var(--line); border-radius:12px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th,td { padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+    th { position:sticky; top:0; background:#111721; color:var(--muted); font-weight:600; }
+    td.path { max-width:560px; overflow:hidden; text-overflow:ellipsis; }
+    .hidden { display:none !important; }
+    .footer-note { color:var(--muted); margin-top:16px; font-size:12px; line-height:1.5; }
+    @media (max-width:800px) { header{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:repeat(2,1fr)}.benchrow{grid-template-columns:1fr}.benchrow .barbox{order:3} }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>SLC4<br/>Semantic Log Packer</h1>
+      <p>Experimental lossless semantic compressor for structured JSON logs. It fingerprints schemas, columnizes values, chooses generic codecs per field, and uses Zstandard as the final entropy/compression backend.</p>
+    </div>
+    <div class="badge">research prototype · codec v4 · Node.js</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="pack">Pack & benchmark</button>
+    <button class="tab" data-tab="unpack">Unpack .slc4z</button>
+  </div>
+
+  <section id="packPanel" class="panel">
+    <div id="packDrop" class="drop">
+      <strong>Drop JSON / JSONL logs here</strong>
+      <span>JSON object, JSON array of objects, or NDJSON/JSONL · max 128 MiB by default</span>
+      <input id="packFile" type="file" accept=".json,.jsonl,.ndjson,application/json" />
+    </div>
+    <div class="controls">
+      <label class="control">Candidate selection
+        <select id="selection"><option value="zstd" selected>ZSTD-aware</option><option value="raw">Smallest semantic stream</option></select>
+      </label>
+      <label class="control">ZSTD level
+        <input id="zlevel" type="number" min="1" max="22" value="19" />
+      </label>
+      <button id="analyzeBtn" class="secondary" disabled>Analyze</button>
+      <button id="packBtn" class="primary" disabled>Pack .slc4z</button>
+    </div>
+    <div id="packStatus" class="status">Choose a file to begin.</div>
+
+    <div id="results" class="hidden">
+      <div class="grid">
+        <div class="card"><div class="k">Records</div><div id="records" class="v">—</div></div>
+        <div class="card"><div class="k">Leaf schemas</div><div id="schemas" class="v">—</div></div>
+        <div class="card"><div class="k">Fields</div><div id="fields" class="v">—</div></div>
+        <div class="card"><div class="k">Reduction</div><div id="ratio" class="v">—</div></div>
+      </div>
+
+      <div class="bench">
+        <h3>Benchmark</h3>
+        <div id="benchRows"></div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;gap:16px;align-items:end;margin-top:26px">
+        <div><h3 style="margin:0 0 5px">Largest semantic columns</h3><div id="encSummary" class="status" style="margin:0"></div></div>
+        <div id="roundtrip" class="badge">round-trip pending</div>
+      </div>
+      <div class="tablewrap"><table><thead><tr><th>Path</th><th>Codec</th><th>Values</th><th>Bytes</th></tr></thead><tbody id="cols"></tbody></table></div>
+      <div class="footer-note">The benchmark preserves JSON values and record order, but intentionally does not preserve insignificant whitespace or object-key ordering from the source JSON text.</div>
+    </div>
+  </section>
+
+  <section id="unpackPanel" class="panel hidden">
+    <div id="unpackDrop" class="drop">
+      <strong>Drop an .slc4z archive here</strong>
+      <span>The embedded header restores JSON-array / JSON-object / JSONL serialization mode.</span>
+      <input id="unpackFile" type="file" accept=".slc4z,application/octet-stream" />
+    </div>
+    <div class="controls">
+      <button id="inspectBtn" class="secondary" disabled>Inspect archive</button>
+      <button id="unpackBtn" class="primary" disabled>Unpack JSON</button>
+    </div>
+    <div id="unpackStatus" class="status">Choose an archive to begin.</div>
+    <div id="archiveInfo" class="hidden">
+      <div class="grid">
+        <div class="card"><div class="k">Records</div><div id="arRecords" class="v">—</div></div>
+        <div class="card"><div class="k">Schemas</div><div id="arSchemas" class="v">—</div></div>
+        <div class="card"><div class="k">Fields</div><div id="arFields" class="v">—</div></div>
+        <div class="card"><div class="k">Archive size</div><div id="arSize" class="v">—</div></div>
+      </div>
+      <pre id="headerJson" class="mono" style="background:#0e131b;border:1px solid var(--line);border-radius:12px;padding:14px;overflow:auto;color:#b9c6d8"></pre>
+    </div>
+  </section>
+</div>
+<script>
+let packFile = null, unpackFile = null;
+const $ = (id) => document.getElementById(id);
+
+function setupDrop(dropId, inputId, onFile) {
+  const drop=$(dropId), input=$(inputId);
+  drop.addEventListener('click',()=>input.click());
+  input.addEventListener('change',()=>{ if(input.files[0]) onFile(input.files[0]); });
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));
+  drop.addEventListener('drop',e=>{ if(e.dataTransfer.files[0]) onFile(e.dataTransfer.files[0]); });
+}
+setupDrop('packDrop','packFile',f=>{packFile=f;$('packStatus').textContent=`Selected: ${f.name} · ${(f.size/1024/1024).toFixed(2)} MiB`;$('analyzeBtn').disabled=false;$('packBtn').disabled=false;});
+setupDrop('unpackDrop','unpackFile',f=>{unpackFile=f;$('unpackStatus').textContent=`Selected: ${f.name} · ${(f.size/1024).toFixed(1)} KiB`;$('inspectBtn').disabled=false;$('unpackBtn').disabled=false;});
+
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+  const pack=b.dataset.tab==='pack'; $('packPanel').classList.toggle('hidden',!pack); $('unpackPanel').classList.toggle('hidden',pack);
+}));
+
+function endpoint(base,file,withCodec=false) {
+  const q=new URLSearchParams({filename:file.name});
+  if(withCodec){q.set('selection',$('selection').value);q.set('zstd_level',$('zlevel').value)}
+  return `${base}?${q.toString()}`;
+}
+function setStatus(id,msg,error=false){const e=$(id);e.textContent=msg;e.classList.toggle('error',error)}
+async function apiJson(url,file){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:file}); if(!r.ok){let m=await r.text();try{m=JSON.parse(m).detail}catch{}throw new Error(m)} return r.json();}
+
+$('analyzeBtn').onclick=async()=>{
+  if(!packFile)return; $('analyzeBtn').disabled=true; $('packBtn').disabled=true; setStatus('packStatus','Analyzing schemas, evaluating codecs and verifying round-trip…');
+  try {
+    const d=await apiJson(endpoint('/api/analyze',packFile,true),packFile); renderAnalysis(d); setStatus('packStatus',`Analysis complete in ${d.timings.encode_s.toFixed(2)} s encode + ${d.timings.decode_s.toFixed(2)} s verify.`);
+  } catch(e){setStatus('packStatus',e.message,true)} finally {$('analyzeBtn').disabled=false;$('packBtn').disabled=false;}
+};
+
+function renderAnalysis(d){
+  $('results').classList.remove('hidden'); $('records').textContent=d.records.toLocaleString(); $('schemas').textContent=d.schemas; $('fields').textContent=d.fields; $('ratio').textContent=d.ratios.input_to_slc4z+'×';
+  $('roundtrip').textContent=d.round_trip?'round-trip ✓':'round-trip failed';
+  const defs=[['Input',d.sizes.input],['Input + ZSTD',d.sizes.input_zstd],['Canonical + ZSTD',d.sizes.canonical_zstd],['SLC4 semantic',d.sizes.slc4],['SLC4Z',d.sizes.slc4z]];
+  const max=Math.max(...defs.map(x=>x[1].bytes)); $('benchRows').innerHTML=defs.map(([name,x])=>`<div class="benchrow"><div>${name}</div><div class="barbox"><div class="bar ${name==='SLC4Z'?'best':''}" style="width:${Math.max(1,100*x.bytes/max)}%"></div></div><div class="mono">${x.human}</div></div>`).join('');
+  $('encSummary').textContent=Object.entries(d.encodings).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k}=${v}`).join(' · ');
+  $('cols').innerHTML=d.columns.map(c=>`<tr><td class="path mono" title="${esc(c.path)}">${esc(c.path)}</td><td>${esc(c.encoding)}</td><td>${c.values.toLocaleString()}</td><td class="mono">${c.human}</td></tr>`).join('');
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+
+$('packBtn').onclick=async()=>{
+  if(!packFile)return; $('packBtn').disabled=true; setStatus('packStatus','Packing and verifying archive…');
+  try { const r=await fetch(endpoint('/api/pack',packFile,true),{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:packFile}); if(!r.ok){let m=await r.text();try{m=JSON.parse(m).detail}catch{}throw new Error(m)} const blob=await r.blob(); downloadBlob(blob,(packFile.name.replace(/\.[^.]+$/,'')||'archive')+'.slc4z'); setStatus('packStatus',`Packed ${(blob.size/1024).toFixed(1)} KiB · download started.`); }
+  catch(e){setStatus('packStatus',e.message,true)} finally {$('packBtn').disabled=false;}
+};
+
+$('inspectBtn').onclick=async()=>{
+  if(!unpackFile)return; $('inspectBtn').disabled=true; setStatus('unpackStatus','Inspecting archive…');
+  try{const d=await apiJson(endpoint('/api/inspect-archive',unpackFile,false),unpackFile);$('archiveInfo').classList.remove('hidden');$('arRecords').textContent=d.record_count.toLocaleString();$('arSchemas').textContent=d.schema_count;$('arFields').textContent=d.field_count;$('arSize').textContent=d.archive_human;$('headerJson').textContent=JSON.stringify(d.header,null,2);setStatus('unpackStatus',d.round_trip_decodable?'Archive decoded successfully.':'Archive validation failed.',!d.round_trip_decodable)}catch(e){setStatus('unpackStatus',e.message,true)}finally{$('inspectBtn').disabled=false;}
+};
+
+$('unpackBtn').onclick=async()=>{
+  if(!unpackFile)return; $('unpackBtn').disabled=true; setStatus('unpackStatus','Decoding semantic archive…');
+  try{const r=await fetch(endpoint('/api/unpack',unpackFile,false),{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:unpackFile});if(!r.ok){let m=await r.text();try{m=JSON.parse(m).detail}catch{}throw new Error(m)}const blob=await r.blob();const cd=r.headers.get('Content-Disposition')||'';const m=cd.match(/filename="([^"]+)"/);downloadBlob(blob,m?m[1]:'unpacked.json');setStatus('unpackStatus',`Decoded ${(blob.size/1024/1024).toFixed(2)} MiB · download started.`)}catch(e){setStatus('unpackStatus',e.message,true)}finally{$('unpackBtn').disabled=false;}
+};
+function downloadBlob(blob,name){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
+</script>
+</body>
+</html>

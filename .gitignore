@@ -1,0 +1,27 @@
+# Build artefacts
+/dist/
+/build/
+node_modules/
+
+# Toolchain fetched for the Total Commander plugin build (~380 MB).
+# Recreate with the instructions in the README; never commit it.
+/tools/
+
+# Test data. Log samples are the raw material of this project and are very
+# likely to contain production values -- addresses, URLs, identifiers, payloads.
+# Nothing under test/ is committed; use fixtures/ for synthetic data instead.
+/test/
+*.slc4z
+*.ndjson
+downloaded-logs-*.json
+
+# The PDF is generated from docs/research.pl.md and goes stale the moment the
+# source changes, so it is built on demand rather than tracked.
+*.pdf
+
+# Editor and OS noise
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+*.swp

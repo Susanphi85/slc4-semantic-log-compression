@@ -1,0 +1,32 @@
+{
+  "raw": {
+    "sha256": "e225cb98ed097f53afbbc908629bcb65caa63a5524c3f8c14d8cf5106fa85ec2",
+    "bytes": 44411,
+    "roundTrip": true,
+    "encCounts": {
+      "intdelta": 1,
+      "boolbits": 1,
+      "numtemplate": 3,
+      "intdict": 1,
+      "front": 2,
+      "const": 7,
+      "msgpack": 3,
+      "strdict": 1
+    }
+  },
+  "zstd": {
+    "sha256": "095bd47717a0944e0ae9e06c9b1c256e36df34e57c7c47cc29f35baf13db5620",
+    "bytes": 55146,
+    "roundTrip": true,
+    "encCounts": {
+      "intdelta": 1,
+      "boolbits": 1,
+      "front": 3,
+      "numtemplate": 2,
+      "intdict": 1,
+      "const": 7,
+      "msgpack": 3,
+      "strraw": 1
+    }
+  }
+}

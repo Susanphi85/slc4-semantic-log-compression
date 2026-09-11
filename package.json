@@ -1,0 +1,23 @@
+{
+  "name": "slc4-web-packer-js",
+  "version": "0.3.0",
+  "description": "Lossless semantic codec for structured logs and tabular exports; runs entirely in the browser",
+  "main": "dev-server.mjs",
+  "scripts": {
+    "start": "node dev-server.mjs",
+    "check": "node test.mjs",
+    "check:wcx": "node test-wcx.mjs",
+    "cli": "node cli.mjs",
+    "build:exe": "node build-exe.mjs",
+    "build:wcx": "node build-wcx.mjs",
+    "legacy:server": "node server.js",
+    "legacy:check": "node test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git"
+  }
+}
