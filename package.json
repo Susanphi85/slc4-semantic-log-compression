@@ -10,6 +10,7 @@
     "cli": "node cli.mjs",
     "build:exe": "node build-exe.mjs",
     "build:wcx": "node build-wcx.mjs",
+    "build:pdf": "node build-pdf.mjs",
     "legacy:server": "node server.js",
     "legacy:check": "node test.js"
   },

@@ -151,10 +151,19 @@ than exhaust memory.
 ```bash
 npm run build:exe    # dist/slc4.exe, a standalone binary (Node SEA)
 npm run build:wcx    # dist/slc4.wcx64, the Total Commander plugin
+npm run build:pdf    # release/slc4-research.{pl,en}.pdf
 ```
 
 The plugin build needs a C compiler — `zig cc`, MinGW-w64 or MSVC, whichever is
 found first. See [README.pl.md](README.pl.md) for details on both.
+
+The PDF build needs pandoc plus either XeLaTeX or Typst. The documents' front
+matter is written for XeLaTeX and is used as-is when a LaTeX engine is present;
+with Typst the script translates the LaTeX-specific values, because
+`linkcolor: blue` is not valid hex to Typst and DejaVu Serif is not among the
+fonts it bundles. Typst is the lighter option by a wide margin — one 22 MB
+binary against a LaTeX distribution. Built PDFs are attached to releases rather
+than committed; they go stale the moment the Markdown changes.
 
 ## Licence
 

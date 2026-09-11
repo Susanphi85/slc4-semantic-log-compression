@@ -246,6 +246,16 @@ Node.
 Po zbudowaniu wtyczki można go skasować; do kolejnego builda trzeba go wtedy
 wskazać ponownie.
 
+## Budowanie PDF-a
+
+```bash
+npm run build:pdf
+```
+
+Wymaga pandoc oraz XeLaTeX albo Typst. Nagłówek dokumentów jest napisany pod XeLaTeX i przy obecnym silniku LaTeX używany bez zmian; przy Typst skrypt tłumaczy wartości specyficzne dla LaTeX-a, bo `linkcolor: blue` nie jest dla Typst poprawnym kolorem heksadecymalnym, a DejaVu Serif nie ma wśród dowożonych czcionek. Typst jest nieporównanie lżejszy — jeden plik 22 MB wobec dystrybucji LaTeX-a.
+
+Nagłówka celowo nie przepisałem pod Typst: zapisuje zamierzony skład, a skrypt dostosowuje się do tego, co jest dostępne. Gotowe PDF-y są dołączane do wydań, a nie commitowane — dezaktualizują się w chwili zmiany Markdowna.
+
 ## Testy
 
 ```bash
