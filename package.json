@@ -1,6 +1,6 @@
 {
   "name": "slc4-web-packer-js",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Lossless semantic codec for structured logs and tabular exports; runs entirely in the browser",
   "main": "dev-server.mjs",
   "scripts": {

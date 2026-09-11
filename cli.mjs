@@ -17,7 +17,7 @@ import * as zstd from './web/lib/zstd-node.js';
 
 arc.setZstd(zstd);
 
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
 const err = (...a) => process.stderr.write(a.join(' ') + '\n');
 
 // --- argument parsing -------------------------------------------------------
