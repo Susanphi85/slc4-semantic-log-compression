@@ -12,3 +12,4 @@
 *.exe    binary
 *.wcx64  binary
 *.pdf    binary
+*.png    binary

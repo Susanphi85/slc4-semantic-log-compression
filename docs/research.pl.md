@@ -405,6 +405,8 @@ Okazało się to istotne metodologicznie. **Strumień semantyczny SLC4 jest dete
 
 Wynika z tego zalecenie dla każdego przyszłego benchmarku: **rozmiar archiwum końcowego jest odtwarzalny z dokładnością do ułamka procenta wyłącznie w obrębie tej samej wersji biblioteki zstd**. Porównania między systemami powinny albo jawnie raportować wersję backendu, albo odnosić się do strumienia semantycznego, który takiej zmienności nie ma. Nie unieważnia to wcześniejszych liczb, ale wyznacza próg, poniżej którego różnica między dwoma kodekami nie jest sygnałem.
 
+Sformułowanie „z dokładnością do ułamka procenta" okazało się jednak zbyt łagodne i zostaje poniżej skorygowane. Pomiar na próbce 10 000 rekordów pokazał, że **rozjazd zależy od wejścia i sięgnął 4,6% na baseline'ie** - więcej niż cała przewaga zmierzona później nad Parquetem. Szczegóły i odrzucona hipoteza o rozmiarze okna znajdują się w sekcji o rozjeździe backendów w eksperymencie C.
+
 ## Eksperyment A: arbitralna ramka 2D na zwykłym tekście
 
 Pierwszy prototyp pakował powtarzalny JSON/tekst bezpośrednio do ramek 2D. Wynik był jednoznacznie negatywny:
@@ -496,7 +498,43 @@ Round-trip wszystkich 5 000 rekordów zakończył się powodzeniem.
 
 Wynik końcowy odpowiada około **28,0x redukcji względem oryginalnego eksportu JSON** i jest o około **25,0% mniejszy od canonical JSON + ZSTD-19**.
 
+### Kontrola skalowania: 10 000 rekordów
+
+Naturalne pytanie po wyniku V4 brzmi, czy przewaga utrzymuje się przy większej próbce, czy była artefaktem konkretnego zbioru 5 000 rekordów. Ten sam eksport, powiększony do 10 000 rekordów (10,90 MiB), daje ten sam profil strukturalny - **14 schematów liściowych i 28 ścieżek**, dokładnie jak przy połowie danych - co samo w sobie potwierdza hipotezę o niewielkiej liczbie powtarzalnych szkieletów.
+
+| Reprezentacja | 5 000 rekordów | 10 000 rekordów | Stosunek |
+|---|---:|---:|---:|
+| wejście JSON | 5,62 MiB | 10,90 MiB | 1,94x |
+| canonical + ZSTD-19 | 273,6 KiB | 529,8 KiB | 1,94x |
+| SLC4 semantyczny | 423,1 KiB | 727,2 KiB | 1,72x |
+| **SLC4Z** | **205,5 KiB** | **402,8 KiB** | **1,96x** |
+| przewaga nad canonical+ZSTD | 24,8% | 24,0% | - |
+
 ![Porównanie wyników kompresji na próbce 5 000 logów Cloud Run](semantic_log_codec_benchmark.png)
+
+![To samo na próbce 10 000 rekordów; profil strukturalny i przewaga pozostają niezmienione](semantic_log_codec_benchmark_10k.png)
+
+Przewaga jest **stabilna**: 24,8% przy 5 000 i 24,0% przy 10 000 rekordów. Nie pojawia się ani spodziewany zysk ze skali - dwukrotnie dłuższy strumień nie daje istotnie lepszych słowników - ani degradacja. Jedyną wielkością rosnącą podliniowo jest strumień pośredni (1,72x), co jest oczekiwane, bo metadane schematów i ścieżek nie rosną wraz z liczbą rekordów; po kompresji finalnej efekt ten znika.
+
+Wniosek jest umiarkowanie interesujący i warto go postawić wprost: **na tym zbiorze przewaga metody jest własnością struktury danych, nie ich objętości.** Zwiększanie próbki nie jest zatem drogą do lepszych wyników - drogą jest zmiana klasy danych, co robią eksperymenty F i H.
+
+### Rozjazd backendów rośnie z rozmiarem wejścia
+
+Pomiar 10 000 rekordów ujawnił zjawisko, którego nie było widać na mniejszej próbce, i wymusza zaostrzenie ostrzeżenia z sekcji o metodologii.
+
+Zrzuty ekranu powyżej pochodzą z implementacji przeglądarkowej, czyli z ZSTD w WebAssembly. Wartości przeliczone niezależnie przez implementację używającą `node:zlib` zgadzają się **dokładnie** tam, gdzie nie bierze w nich udziału kompresja bajtowa - canonical + ZSTD-19 to 529,8 KiB w obu, a strumień semantyczny 727,2 KiB w obu, co potwierdza, że dane i decyzje kodeka są identyczne. Rozchodzą się natomiast dwie wielkości:
+
+| Wielkość | WebAssembly | `node:zlib` | Rozjazd |
+|---|---:|---:|---:|
+| SLC4Z | 399,8 KiB | 402,8 KiB | 0,75% |
+| wejście + ZSTD-19 | 564,2 KiB | 539,4 KiB | **4,60%** |
+
+Na próbce 5 000 rekordów ta druga wielkość była w obu backendach **identyczna** (290,1 KiB). Rozjazd nie jest więc stałym ułamkiem procenta, jak sugerowała pierwotna redakcja sekcji o metodologii - **zależy od wejścia i może osiągnąć kilka procent**.
+
+Postawiono hipotezę, że odpowiada za to rozmiar okna ZSTD: poziom 19 domyślnie używa okna 8 MiB, w którym próbka 5,62 MiB mieści się w całości, a 10,90 MiB nie. Hipotezę **sprawdzono i odrzucono**: wymuszenie `windowLog` równego 23 i 24 oraz wyłączenie long-distance matching zmieniło wynik o 0,1 KiB, czyli o 0,02%. Najbardziej prawdopodobnym wyjaśnieniem pozostaje różnica presetów parametrów poziomu 19 między wersjami biblioteki zstd, o wielkości zależnej od charakteru wejścia, ale nie została ona wyizolowana.
+
+Konsekwencja dla całego dokumentu jest poważniejsza, niż wygląda. Rozjazd 4,6% na baseline'ie jest **większy niż cała przewaga SLC4 nad Parquetem** zmierzona w eksperymencie I (6,8% i 8,4%). Oznacza to, że porównanie formatów, w którym strony liczono różnymi buildami zstd, mogłoby zmienić znak wyniku. Wszystkie liczby w eksperymencie I pochodzą z jednego backendu i jednej wersji biblioteki po obu stronach, ale reguła na przyszłość musi być ostrzejsza niż dotąd: **wersję biblioteki kompresującej należy raportować obok wyniku i nie wolno mieszać backendów w obrębie jednego porównania.**
+
 
 ### Dlaczego „mniejszy intermediate” nie znaczy „mniejsze archiwum”
 

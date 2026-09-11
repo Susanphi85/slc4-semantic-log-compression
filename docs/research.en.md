@@ -409,6 +409,8 @@ This proved methodologically important. **The SLC4 semantic stream is determinis
 
 The recommendation for any future benchmark follows: **the size of the final archive is reproducible to within a fraction of a percent only within the same version of the zstd library**. Comparisons between systems should either report the backend version explicitly or refer to the semantic stream, which has no such variability. This does not invalidate the earlier figures, but it sets the threshold below which a difference between two codecs is not a signal.
 
+The phrase "to within a fraction of a percent" proved too mild, however, and is corrected below. The 10 000-record measurement showed that **the divergence depends on the input and reached 4.6% on a baseline** — more than the entire advantage later measured over Parquet. Details, and the rejected hypothesis about window size, are in the section on backend divergence within experiment C.
+
 ## Experiment A: an arbitrary 2D frame on ordinary text
 
 The first prototype packed repetitive JSON/text directly into 2D frames. The result was unambiguously negative:
@@ -499,6 +501,43 @@ The round-trip of all 5 000 records succeeded.
 | **V4 + ZSTD-19** | **205.3 KiB** | **3.57%** |
 
 The final result corresponds to roughly **28.0× reduction against the original JSON export** and is about **25.0% smaller than canonical JSON + ZSTD-19**.
+
+### A scaling check: 10 000 records
+
+The natural question after the V4 result is whether the advantage holds on a larger sample, or was an artefact of the particular 5 000-record dataset. The same export, enlarged to 10 000 records (10.90 MiB), gives the same structural profile — **14 leaf schemas and 28 paths**, exactly as with half the data — which by itself supports the hypothesis of a small number of repeated skeletons.
+
+| Representation | 5 000 records | 10 000 records | Ratio |
+|---|---:|---:|---:|
+| JSON input | 5.62 MiB | 10.90 MiB | 1.94× |
+| canonical + ZSTD-19 | 273.6 KiB | 529.8 KiB | 1.94× |
+| SLC4 semantic | 423.1 KiB | 727.2 KiB | 1.72× |
+| **SLC4Z** | **205.5 KiB** | **402.8 KiB** | **1.96×** |
+| advantage over canonical+ZSTD | 24.8% | 24.0% | – |
+
+![Compression results on a sample of 5 000 Cloud Run log records](semantic_log_codec_benchmark.png)
+
+![The same on a sample of 10 000 records; the structural profile and the advantage are unchanged](semantic_log_codec_benchmark_10k.png)
+
+The advantage is **stable**: 24.8% at 5 000 records and 24.0% at 10 000. Neither the expected gain from scale appears — twice the stream length does not yield materially better dictionaries — nor any degradation. The only quantity growing sub-linearly is the intermediate stream (1.72×), which is expected, because schema and path metadata do not grow with the record count; after final compression that effect disappears.
+
+The conclusion is moderately interesting and worth stating plainly: **on this dataset the method's advantage is a property of the structure of the data, not of its volume.** Enlarging the sample is therefore not a route to better results; the route is changing the class of data, which is what experiments F and H do.
+
+### Backend divergence grows with input size
+
+The 10 000-record measurement revealed a phenomenon invisible on the smaller sample, and it forces the warning in the methodology section to be sharpened.
+
+The screenshots above come from the browser implementation, that is from ZSTD in WebAssembly. Values recomputed independently by the implementation using `node:zlib` agree **exactly** wherever byte compression plays no part — canonical + ZSTD-19 is 529.8 KiB in both, and the semantic stream 727.2 KiB in both, confirming that the data and the codec's decisions are identical. Two quantities do diverge, however:
+
+| Quantity | WebAssembly | `node:zlib` | Divergence |
+|---|---:|---:|---:|
+| SLC4Z | 399.8 KiB | 402.8 KiB | 0.75% |
+| input + ZSTD-19 | 564.2 KiB | 539.4 KiB | **4.60%** |
+
+On the 5 000-record sample the latter quantity was **identical** in both backends (290.1 KiB). The divergence is therefore not a fixed fraction of a percent, as the original wording of the methodology section suggested — **it depends on the input and can reach several percent**.
+
+The hypothesis was advanced that the ZSTD window size is responsible: level 19 uses an 8 MiB window by default, within which the 5.62 MiB sample fits entirely while 10.90 MiB does not. The hypothesis was **tested and rejected**: forcing `windowLog` to 23 and 24, and disabling long-distance matching, changed the result by 0.1 KiB, that is by 0.02%. The most likely explanation remains a difference in the level-19 parameter presets between versions of the zstd library, of a magnitude depending on the nature of the input, but it has not been isolated.
+
+The consequence for the document as a whole is more serious than it looks. A 4.6% divergence on a baseline is **larger than SLC4's entire advantage over Parquet** as measured in experiment I (6.8% and 8.4%). This means a format comparison in which the two sides were computed with different zstd builds could reverse the sign of the result. All figures in experiment I come from a single backend and a single library version on both sides, but the rule going forward must be stricter than before: **the version of the compression library must be reported alongside the result, and backends must never be mixed within a single comparison.**
 
 ### Why "a smaller intermediate" does not mean "a smaller archive"
 
