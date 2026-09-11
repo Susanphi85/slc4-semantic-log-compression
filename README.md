@@ -63,6 +63,35 @@ node cli.mjs inspect logs.slc4z
 node cli.mjs bench ./datasets --levels 3,9,19 --csv results.csv
 ```
 
+## Try it on something
+
+`examples/` holds two small archives you can open immediately, plus the source
+CSV for one of them so the byte-exact claim can be checked rather than believed:
+
+```bash
+node cli.mjs inspect examples/logs-sample.slc4z
+node cli.mjs unpack examples/orders-sample.slc4z -o restored.csv
+cmp restored.csv examples/orders-sample.csv     # identical, byte for byte
+```
+
+They are also what to press Enter on after installing the Total Commander
+plugin. See [examples/README.md](examples/README.md).
+
+## Downloads
+
+Prebuilt binaries are published as **release attachments**, not committed to the
+repository. The reason is worth stating: `slc4.exe` is 90 MB because it embeds
+the Node runtime, every rebuild produces an entirely different blob, and git
+keeps every version forever — a handful of releases would turn a 600 KB
+repository into a multi-hundred-megabyte clone for everyone, on every platform,
+whether they wanted the Windows binary or not.
+
+Both artefacts are optional. The web application needs neither, and the CLI runs
+under any Node 18+. If you do download them, check the published SHA-256 first;
+the executable is unsigned, because injecting a payload into a copy of `node.exe`
+invalidates the Authenticode signature it carried, and shipping a broken
+signature would be worse than shipping none.
+
 ## Input formats
 
 Detected from the file name, else from the first bytes; `--format` overrides.
@@ -96,6 +125,7 @@ web/                 the deployable application; nothing outside it is needed
 cli.mjs              pack / unpack / inspect / bench / selftest
 wcx/                 Total Commander packer plugin, in C
 docs/                the research document
+examples/            small synthetic archives, ready to open
 fixtures/            synthetic reference data for format-compatibility tests
 ```
 

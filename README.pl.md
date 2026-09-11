@@ -70,6 +70,24 @@ Wrzuć **zawartość** `web/` do `public_html/` (lub podkatalogu). To wszystko �
 - HTTPS lub `localhost` — bez bezpiecznego kontekstu przeglądarka nie uruchomi
   modułowego Web Workera.
 
+## Spróbuj na czymś
+
+W `examples/` leżą dwa małe archiwa do natychmiastowego otwarcia oraz źródłowy CSV dla jednego z nich, żeby bajtową wierność dało się **sprawdzić, a nie przyjąć na wiarę**:
+
+```bash
+node cli.mjs inspect examples/logs-sample.slc4z
+node cli.mjs unpack examples/orders-sample.slc4z -o odtworzone.csv
+cmp odtworzone.csv examples/orders-sample.csv     # identyczne co do bajtu
+```
+
+To również na nich wciśniesz Enter po zainstalowaniu wtyczki do Total Commandera. Opis: [examples/README.md](examples/README.md).
+
+## Pobieranie binariów
+
+Gotowe pliki wykonywalne są publikowane jako **aktywa wydania**, a nie commitowane do repozytorium. Powód warto nazwać: `slc4.exe` waży 90 MB, bo zawiera runtime Node, każdy rebuild daje całkowicie inny blob, a git trzyma wszystkie wersje na zawsze — kilka wydań zamieniłoby repozytorium o rozmiarze 600 KB w klon ważący setki megabajtów, dla każdego, na każdej platformie, niezależnie od tego, czy binarka dla Windows jest mu potrzebna.
+
+Oba artefakty są opcjonalne. Aplikacja webowa nie potrzebuje żadnego, a CLI działa pod dowolnym Node 18+. Jeśli jednak je pobierasz, sprawdź najpierw opublikowaną sumę SHA-256; plik wykonywalny jest **niepodpisany**, ponieważ wstrzyknięcie ładunku do kopii `node.exe` unieważnia podpis Authenticode, który ta kopia niosła, a wysyłanie uszkodzonego podpisu byłoby gorsze niż brak podpisu.
+
 ## Formaty wejściowe
 
 Rozpoznawane po nazwie pliku, a gdy ta nic nie mówi — po pierwszych bajtach.

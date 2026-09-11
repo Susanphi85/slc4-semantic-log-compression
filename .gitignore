@@ -15,6 +15,15 @@ node_modules/
 *.ndjson
 downloaded-logs-*.json
 
+# ...except the small synthetic archives under examples/, which are committed
+# on purpose so the plugin and the CLI have something to open immediately.
+!examples/*.slc4z
+
+# Staging area for release assets. Binaries are published as release
+# attachments rather than committed: slc4.exe is 90 MB, every rebuild produces
+# a completely different blob, and git would keep all of them forever.
+/release/
+
 # The PDF is generated from docs/research.pl.md and goes stale the moment the
 # source changes, so it is built on demand rather than tracked.
 *.pdf
